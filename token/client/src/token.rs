@@ -47,7 +47,6 @@ use {
             BaseStateWithExtensions, Extension, ExtensionType, StateWithExtensionsOwned,
         },
         instruction, offchain,
-        proof::{zk_proof_type_to_instruction, ProofData, ProofLocation},
         solana_zk_sdk::{
             encryption::{
                 auth_encryption::AeKey,
@@ -62,6 +61,9 @@ use {
             },
         },
         state::{Account, AccountState, Mint, Multisig},
+    },
+    spl_token_confidential_transfer_proof_extraction::{
+        zk_proof_type_to_instruction, ProofData, ProofLocation,
     },
     spl_token_confidential_transfer_proof_generation::{
         transfer::TransferProofData, transfer_with_fee::TransferWithFeeProofData,

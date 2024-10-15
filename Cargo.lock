@@ -7714,6 +7714,7 @@ dependencies = [
  "spl-record",
  "spl-token 6.0.0",
  "spl-token-2022 5.0.2",
+ "spl-token-confidential-transfer-proof-extraction",
  "spl-token-confidential-transfer-proof-generation",
  "spl-token-group-interface 0.4.2",
  "spl-token-metadata-interface 0.5.1",

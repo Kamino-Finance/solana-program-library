@@ -17,6 +17,7 @@ use {
             metadata_pointer::{self, MetadataPointer},
             mint_close_authority::MintCloseAuthority,
             non_transferable::{NonTransferable, NonTransferableAccount},
+            pausable,
             permanent_delegate::{get_permanent_delegate, PermanentDelegate},
             reallocate, token_metadata,
             transfer_fee::{self, TransferFeeAmount, TransferFeeConfig},
@@ -1661,6 +1662,11 @@ impl Processor {
                         &input[1..],
                     )
                 }
+                TokenInstruction::PausableExtension => {
+                    msg!("Instruction: PausableExtension");
+                    pausable::processor::process_instruction(program_id, accounts, &input[1..])
+                }
+                _ => unimplemented!("TokenInstruction: {:?}", instruction),
             }
         } else if let Ok(instruction) = TokenMetadataInstruction::unpack(input) {
             token_metadata::processor::process_instruction(program_id, accounts, instruction)

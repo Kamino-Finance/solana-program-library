@@ -670,6 +670,28 @@ pub enum TokenInstruction<'a> {
     /// for further details about the extended instructions that share this instruction
     /// prefix
     MetadataPointerExtension,
+    // 40
+    /// The common instruction prefix for group pointer extension instructions.
+    ///
+    /// See `extension::group_pointer::instruction::GroupPointerInstruction`
+    /// for further details about the extended instructions that share this
+    /// instruction prefix
+    GroupPointerExtension,
+    /// The common instruction prefix for group member pointer extension
+    /// instructions.
+    ///
+    /// See `extension::group_member_pointer::instruction::GroupMemberPointerInstruction`
+    /// for further details about the extended instructions that share this
+    /// instruction prefix
+    GroupMemberPointerExtension,
+    /// Instruction prefix for instructions to the confidential-mint-burn
+    /// extension
+    ConfidentialMintBurnExtension,
+    /// Instruction prefix for instructions to the scaled ui amount
+    /// extension
+    ScaledUiAmountExtension,
+    /// Instruction prefix for instructions to the pausable extension
+    PausableExtension,
 }
 impl<'a> TokenInstruction<'a> {
     /// Unpacks a byte buffer into a [TokenInstruction](enum.TokenInstruction.html).
@@ -974,6 +996,10 @@ impl<'a> TokenInstruction<'a> {
             &Self::MetadataPointerExtension => {
                 buf.push(39);
             }
+            &Self::PausableExtension => {
+                buf.push(44);
+            }
+            _ => unimplemented!(),
         };
         buf
     }

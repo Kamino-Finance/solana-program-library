@@ -43,6 +43,7 @@ use {
 
 #[cfg(feature = "serde-traits")]
 use serde::{Deserialize, Serialize};
+use spl_pod::{optional_keys::OptionalNonZeroPubkey, primitives::PodBool};
 
 /// Confidential Transfer extension
 pub mod confidential_transfer;
@@ -64,6 +65,8 @@ pub mod metadata_pointer;
 pub mod mint_close_authority;
 /// Non Transferable extension
 pub mod non_transferable;
+/// Pausable extension
+pub mod pausable;
 /// Permanent Delegate extension
 pub mod permanent_delegate;
 /// Utility to reallocate token accounts
@@ -904,6 +907,24 @@ pub enum ExtensionType {
     MetadataPointer,
     /// Mint contains token-metadata
     TokenMetadata,
+    /// Mint contains a pointer to another account (or the same account) that
+    /// holds group configurations
+    GroupPointer,
+    /// Mint contains token group configurations
+    TokenGroup,
+    /// Mint contains a pointer to another account (or the same account) that
+    /// holds group member configurations
+    GroupMemberPointer,
+    /// Mint contains token group member configurations
+    TokenGroupMember,
+    /// Mint allowing the minting and burning of confidential tokens
+    ConfidentialMintBurn,
+    /// Tokens whose UI amount is scaled by a given amount
+    ScaledUiAmount,
+    /// Tokens where minting / burning / transferring can be paused
+    Pausable,
+    /// Indicates that the account belongs to a pausable mint
+    PausableAccount,
     /// Test variable-length mint extension
     #[cfg(test)]
     VariableLenMintTest = u16::MAX - 2,
@@ -928,6 +949,26 @@ impl From<ExtensionType> for [u8; 2] {
         u16::from(a).to_le_bytes()
     }
 }
+
+/// Indicates that the tokens from this mint can be paused
+#[cfg_attr(feature = "serde-traits", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde-traits", serde(rename_all = "camelCase"))]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Pod, Zeroable)]
+#[repr(C)]
+pub struct PausableConfig {
+    /// Authority that can pause or resume activity on the mint
+    pub authority: OptionalNonZeroPubkey,
+    /// Whether minting / transferring / burning tokens is paused
+    pub paused: PodBool,
+}
+
+/// Indicates that the tokens from this account belong to a pausable mint
+#[cfg_attr(feature = "serde-traits", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde-traits", serde(rename_all = "camelCase"))]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Pod, Zeroable)]
+#[repr(transparent)]
+pub struct PausableAccount;
+
 impl ExtensionType {
     /// Returns true if the given extension type is sized
     ///
@@ -978,6 +1019,14 @@ impl ExtensionType {
             }
             ExtensionType::MetadataPointer => pod_get_packed_len::<MetadataPointer>(),
             ExtensionType::TokenMetadata => unreachable!(),
+            ExtensionType::GroupPointer
+            | ExtensionType::TokenGroup
+            | ExtensionType::GroupMemberPointer
+            | ExtensionType::TokenGroupMember
+            | ExtensionType::ConfidentialMintBurn
+            | ExtensionType::ScaledUiAmount => unimplemented!(),
+            ExtensionType::Pausable => pod_get_packed_len::<PausableConfig>(),
+            ExtensionType::PausableAccount => pod_get_packed_len::<PausableAccount>(),
             #[cfg(test)]
             ExtensionType::AccountPaddingTest => pod_get_packed_len::<AccountPaddingTest>(),
             #[cfg(test)]
@@ -1037,7 +1086,14 @@ impl ExtensionType {
             | ExtensionType::TransferHook
             | ExtensionType::ConfidentialTransferFeeConfig
             | ExtensionType::MetadataPointer
-            | ExtensionType::TokenMetadata => AccountType::Mint,
+            | ExtensionType::TokenMetadata
+            | ExtensionType::GroupPointer
+            | ExtensionType::TokenGroup
+            | ExtensionType::GroupMemberPointer
+            | ExtensionType::ConfidentialMintBurn
+            | ExtensionType::TokenGroupMember
+            | ExtensionType::ScaledUiAmount
+            | ExtensionType::Pausable => AccountType::Mint,
             ExtensionType::ImmutableOwner
             | ExtensionType::TransferFeeAmount
             | ExtensionType::ConfidentialTransferAccount
@@ -1045,7 +1101,8 @@ impl ExtensionType {
             | ExtensionType::NonTransferableAccount
             | ExtensionType::TransferHookAccount
             | ExtensionType::CpiGuard
-            | ExtensionType::ConfidentialTransferFeeAmount => AccountType::Account,
+            | ExtensionType::ConfidentialTransferFeeAmount
+            | ExtensionType::PausableAccount => AccountType::Account,
             #[cfg(test)]
             ExtensionType::VariableLenMintTest => AccountType::Mint,
             #[cfg(test)]

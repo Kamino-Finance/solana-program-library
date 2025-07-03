@@ -16,7 +16,9 @@ use {
             metadata_pointer::MetadataPointer,
             mint_close_authority::MintCloseAuthority,
             non_transferable::{NonTransferable, NonTransferableAccount},
+            pausable::{PausableAccount, PausableConfig},
             permanent_delegate::PermanentDelegate,
+            scaled_ui_amount::ScaledUiAmountConfig,
             transfer_fee::{TransferFeeAmount, TransferFeeConfig},
             transfer_hook::{TransferHook, TransferHookAccount},
         },
@@ -71,6 +73,8 @@ pub mod pausable;
 pub mod permanent_delegate;
 /// Utility to reallocate token accounts
 pub mod reallocate;
+/// Scaled UI Amount extension
+pub mod scaled_ui_amount;
 /// Token-metadata extension
 pub mod token_metadata;
 /// Transfer Fee extension
@@ -950,25 +954,6 @@ impl From<ExtensionType> for [u8; 2] {
     }
 }
 
-/// Indicates that the tokens from this mint can be paused
-#[cfg_attr(feature = "serde-traits", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde-traits", serde(rename_all = "camelCase"))]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Pod, Zeroable)]
-#[repr(C)]
-pub struct PausableConfig {
-    /// Authority that can pause or resume activity on the mint
-    pub authority: OptionalNonZeroPubkey,
-    /// Whether minting / transferring / burning tokens is paused
-    pub paused: PodBool,
-}
-
-/// Indicates that the tokens from this account belong to a pausable mint
-#[cfg_attr(feature = "serde-traits", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde-traits", serde(rename_all = "camelCase"))]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Pod, Zeroable)]
-#[repr(transparent)]
-pub struct PausableAccount;
-
 impl ExtensionType {
     /// Returns true if the given extension type is sized
     ///
@@ -1023,8 +1008,8 @@ impl ExtensionType {
             | ExtensionType::TokenGroup
             | ExtensionType::GroupMemberPointer
             | ExtensionType::TokenGroupMember
-            | ExtensionType::ConfidentialMintBurn
-            | ExtensionType::ScaledUiAmount => unimplemented!(),
+            | ExtensionType::ConfidentialMintBurn => unimplemented!(),
+            ExtensionType::ScaledUiAmount => pod_get_packed_len::<ScaledUiAmountConfig>(),
             ExtensionType::Pausable => pod_get_packed_len::<PausableConfig>(),
             ExtensionType::PausableAccount => pod_get_packed_len::<PausableAccount>(),
             #[cfg(test)]

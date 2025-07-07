@@ -1112,6 +1112,9 @@ impl ExtensionType {
                 ExtensionType::TransferHook => {
                     account_extension_types.push(ExtensionType::TransferHookAccount);
                 }
+                ExtensionType::Pausable => {
+                    account_extension_types.push(ExtensionType::PausableAccount);
+                }
                 #[cfg(test)]
                 ExtensionType::MintPaddingTest => {
                     account_extension_types.push(ExtensionType::AccountPaddingTest);

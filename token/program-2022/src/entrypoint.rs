@@ -1,5 +1,8 @@
 //! Program entrypoint
 
+// `entrypoint` (the macro) is only used by the `entrypoint!` invocation below, which is compiled
+// out under `no-entrypoint`; `entrypoint::ProgramResult` is always used.
+#[allow(unused_imports)]
 use {
     crate::{error::TokenError, processor::Processor},
     solana_program::{

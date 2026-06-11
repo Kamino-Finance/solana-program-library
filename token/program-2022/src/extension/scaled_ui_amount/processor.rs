@@ -1,3 +1,8 @@
+// "Basic support" backport: the ScaledUiAmount instruction processing is intentionally not wired
+// into the program's instruction dispatch (klend only needs the extension to be *recognized*), so
+// these processor fns are currently unreferenced.
+#![allow(dead_code)]
+
 use {
     crate::{
         check_program_account,

@@ -23,7 +23,7 @@ export PATH="$HOME"/.local/share/solana/install/active_release/bin:"$PATH"
 if [[ -n $1 ]]; then
   case $1 in
   install)
-    sh -c "$(curl -sSfL https://release.solana.com/$solana_version/install)"
+    sh -c "$(curl -sSfL https://release.anza.xyz/$solana_version/install)"
     solana --version
     ;;
   *)

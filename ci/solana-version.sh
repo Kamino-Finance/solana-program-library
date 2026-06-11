@@ -14,7 +14,11 @@
 if [[ -n $SOLANA_VERSION ]]; then
   solana_version="$SOLANA_VERSION"
 else
-  solana_version=v1.16.13
+  # v1.16.13 (this branch's original pin) is EOL and no longer hosted by any release server
+  # (release.solana.com is decommissioned; release.anza.xyz only serves >=v1.17). Use the nearest
+  # anza-hosted release for the CI toolchain — crate deps stay pinned at 1.16.x via Cargo.lock, so
+  # only the build-sbf toolchain version moves.
+  solana_version=v1.17.34
 fi
 
 export solana_version="$solana_version"

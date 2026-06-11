@@ -19,7 +19,7 @@ jobs:
   cargo-test-sbf:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Remove unneeded packages for more space
         run: bash ./ci/warning/purge-ubuntu-runner.sh
@@ -37,20 +37,20 @@ jobs:
           override: true
           profile: minimal
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
           key: cargo-build-${{ hashFiles('**/Cargo.lock') }}-${{ env.RUST_STABLE}}
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/rustfilt
           key: cargo-sbf-bins-${{ runner.os }}
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: ~/.cache/solana
           key: solana-${{ env.SOLANA_VERSION }}
@@ -65,7 +65,7 @@ jobs:
         run: ./ci/cargo-test-sbf.sh token
 
       - name: Upload programs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: token-programs
           path: "target/deploy/*.so"
@@ -74,7 +74,7 @@ jobs:
   cargo-test-token-2022-serde:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set env vars
         run: |
@@ -89,7 +89,7 @@ jobs:
           override: true
           profile: minimal
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -106,7 +106,7 @@ jobs:
   cargo-test-sbf-transfer-hook:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set env vars
         run: |
@@ -121,20 +121,20 @@ jobs:
           override: true
           profile: minimal
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
           key: cargo-build-${{ hashFiles('**/Cargo.lock') }}-${{ env.RUST_STABLE}}
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/rustfilt
           key: cargo-sbf-bins-${{ runner.os }}
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: ~/.cache/solana
           key: solana-${{ env.SOLANA_VERSION }}
@@ -149,7 +149,7 @@ jobs:
         run: ./ci/cargo-test-sbf.sh token/transfer-hook-example
 
       - name: Upload program
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: spl-transfer-hook-example
           path: "target/deploy/*.so"
@@ -158,7 +158,7 @@ jobs:
   cargo-test-sbf-associated-token-account:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set env vars
         run: |
@@ -173,20 +173,20 @@ jobs:
           override: true
           profile: minimal
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
           key: cargo-build-${{ hashFiles('**/Cargo.lock') }}-${{ env.RUST_STABLE}}
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/rustfilt
           key: cargo-sbf-bins-${{ runner.os }}
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: ~/.cache/solana
           key: solana-${{ env.SOLANA_VERSION }}
@@ -201,7 +201,7 @@ jobs:
         run: ./ci/cargo-test-sbf.sh associated-token-account
 
       - name: Upload program
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: associated-token-account-program
           path: "target/deploy/*.so"
@@ -210,7 +210,7 @@ jobs:
   cargo-test-sbf-twoxtx:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Remove unneeded packages for more space
         run: bash ./ci/warning/purge-ubuntu-runner.sh
@@ -229,7 +229,7 @@ jobs:
           override: true
           profile: minimal
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -255,29 +255,29 @@ jobs:
       NODE_VERSION: 16.x
     needs: [cargo-test-sbf, cargo-test-sbf-associated-token-account]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: ~/.npm
           key: node-${{ hashFiles('token/js/package-lock.json') }}
           restore-keys: |
             node-
       - name: Download programs
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: token-programs
           path: target/deploy
       - name: Download associated-token-account program
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: associated-token-account-program
           path: target/deploy
       - name: Download spl-transfer-hook-example program
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: spl-transfer-hook-example
           path: target/deploy
@@ -286,7 +286,7 @@ jobs:
   cargo-build-test-cli:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set env vars
         run: |
@@ -301,14 +301,14 @@ jobs:
           override: true
           profile: minimal
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
           key: cargo-build-${{ hashFiles('**/Cargo.lock') }}-${{ env.RUST_STABLE }}
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: ~/.cache/solana
           key: solana-${{ env.SOLANA_VERSION }}

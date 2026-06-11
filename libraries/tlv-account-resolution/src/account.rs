@@ -7,7 +7,9 @@ use {
     crate::{error::AccountResolutionError, pubkey_data::PubkeyData, seeds::Seed},
     bytemuck::{Pod, Zeroable},
     solana_program::{
-        account_info::AccountInfo, instruction::AccountMeta, program_error::ProgramError,
+        account_info::AccountInfo,
+        instruction::AccountMeta,
+        program_error::ProgramError,
         pubkey::{Pubkey, PUBKEY_BYTES},
     },
     spl_pod::primitives::PodBool,

@@ -60,6 +60,7 @@ pub fn add_cpi_accounts_for_execute<'a>(
     cpi_account_infos: &mut Vec<AccountInfo<'a>>,
     mint_pubkey: &Pubkey,
     program_id: &Pubkey,
+    amount: u64,
     additional_accounts: &[AccountInfo<'a>],
 ) -> ProgramResult {
     let validation_pubkey = get_extra_account_metas_address(mint_pubkey, program_id);
@@ -81,15 +82,7 @@ pub fn add_cpi_accounts_for_execute<'a>(
     // accounts (everything past the 5 standard ones) onto the real transfer-checked CPI.
     //
     // The first four accounts of the transfer-checked CPI are, in order, source/mint/destination/
-    // authority — the leading accounts of an `Execute`. The transfer amount (needed for any
-    // `Seed::InstructionData` metas) is parsed from the transfer-checked instruction data
-    // (`[tag, amount: u64, decimals]`).
-    let amount = cpi_instruction
-        .data
-        .get(1..9)
-        .and_then(|bytes| bytes.try_into().ok())
-        .map(u64::from_le_bytes)
-        .unwrap_or(0);
+    // authority — the leading accounts of an `Execute`.
     let mut execute_instruction = instruction::execute(
         program_id,
         cpi_account_infos[0].key,

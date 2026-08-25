@@ -67,6 +67,7 @@ pub fn invoke_transfer_checked<'a>(
                 &mut cpi_account_infos,
                 mint_info.key,
                 &program_id,
+                amount,
                 additional_accounts,
             )?;
         }

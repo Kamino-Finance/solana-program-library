@@ -4,14 +4,59 @@
 //! collection of seeds
 
 use {
-    crate::{error::AccountResolutionError, seeds::Seed},
+    crate::{error::AccountResolutionError, pubkey_data::PubkeyData, seeds::Seed},
     bytemuck::{Pod, Zeroable},
     solana_program::{
-        account_info::AccountInfo, instruction::AccountMeta, program_error::ProgramError,
-        pubkey::Pubkey,
+        account_info::AccountInfo,
+        instruction::AccountMeta,
+        program_error::ProgramError,
+        pubkey::{Pubkey, PUBKEY_BYTES},
     },
     spl_pod::primitives::PodBool,
 };
+
+/// Resolve a `Pubkey` from a `PubkeyData` configuration — either from the
+/// instruction data or from the inner data of an account in the list.
+fn resolve_key_data<'a, F>(
+    key_data: &PubkeyData,
+    instruction_data: &[u8],
+    get_account_key_data_fn: F,
+) -> Result<Pubkey, ProgramError>
+where
+    F: Fn(usize) -> Option<(&'a Pubkey, Option<&'a [u8]>)>,
+{
+    match key_data {
+        PubkeyData::Uninitialized => Err(ProgramError::InvalidAccountData),
+        PubkeyData::InstructionData { index } => {
+            let key_start = *index as usize;
+            let key_end = key_start + PUBKEY_BYTES;
+            if key_end > instruction_data.len() {
+                return Err(AccountResolutionError::InstructionDataTooSmall.into());
+            }
+            Ok(Pubkey::new_from_array(
+                instruction_data[key_start..key_end].try_into().unwrap(),
+            ))
+        }
+        PubkeyData::AccountData {
+            account_index,
+            data_index,
+        } => {
+            let account_index = *account_index as usize;
+            let account_data = get_account_key_data_fn(account_index)
+                .ok_or::<ProgramError>(AccountResolutionError::AccountNotFound.into())?
+                .1
+                .ok_or::<ProgramError>(AccountResolutionError::AccountDataNotFound.into())?;
+            let arg_start = *data_index as usize;
+            let arg_end = arg_start + PUBKEY_BYTES;
+            if account_data.len() < arg_end {
+                return Err(AccountResolutionError::AccountDataTooSmall.into());
+            }
+            Ok(Pubkey::new_from_array(
+                account_data[arg_start..arg_end].try_into().unwrap(),
+            ))
+        }
+    }
+}
 
 /// Resolve a program-derived address (PDA) from the instruction data
 /// and the accounts that have already been resolved
@@ -140,6 +185,21 @@ impl ExtraAccountMeta {
         })
     }
 
+    /// Create an `ExtraAccountMeta` whose address is read from some data — the
+    /// instruction data or the inner data of another account in the list.
+    pub fn new_with_pubkey_data(
+        key_data: &PubkeyData,
+        is_signer: bool,
+        is_writable: bool,
+    ) -> Result<Self, ProgramError> {
+        Ok(Self {
+            discriminator: 2,
+            address_config: PubkeyData::pack_into_address_config(key_data)?,
+            is_signer: is_signer.into(),
+            is_writable: is_writable.into(),
+        })
+    }
+
     /// Resolve an `ExtraAccountMeta` into an `AccountMeta`, potentially
     /// resolving a program-derived address (PDA) if necessary
     pub fn resolve<'a, F>(
@@ -169,6 +229,14 @@ impl ExtraAccountMeta {
                         program_id,
                         get_account_key_data_fn,
                     )?,
+                    is_signer: self.is_signer.into(),
+                    is_writable: self.is_writable.into(),
+                })
+            }
+            2 => {
+                let key_data = PubkeyData::unpack(&self.address_config)?;
+                Ok(AccountMeta {
+                    pubkey: resolve_key_data(&key_data, instruction_data, get_account_key_data_fn)?,
                     is_signer: self.is_signer.into(),
                     is_writable: self.is_writable.into(),
                 })

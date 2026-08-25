@@ -45,6 +45,7 @@ use {
 
 #[cfg(feature = "serde-traits")]
 use serde::{Deserialize, Serialize};
+#[allow(unused_imports)] // used only under some feature combinations (backported extensions)
 use spl_pod::{optional_keys::OptionalNonZeroPubkey, primitives::PodBool};
 
 /// Confidential Transfer extension

@@ -60,6 +60,7 @@ pub fn add_cpi_accounts_for_execute<'a>(
     cpi_account_infos: &mut Vec<AccountInfo<'a>>,
     mint_pubkey: &Pubkey,
     program_id: &Pubkey,
+    amount: u64,
     additional_accounts: &[AccountInfo<'a>],
 ) -> ProgramResult {
     let validation_pubkey = get_extra_account_metas_address(mint_pubkey, program_id);
@@ -73,14 +74,46 @@ pub fn add_cpi_accounts_for_execute<'a>(
         .find(|&x| x.key == program_id)
         .ok_or(TransferHookError::IncorrectAccount)?;
 
+    // The extra-account metas must be resolved as if for an `Execute` *into the hook program* —
+    // seed-derived (PDA) metas are derived against `cpi_instruction.program_id`, so resolving
+    // against the (token-program) transfer-checked instruction would derive PDAs against the wrong
+    // program. We therefore build a standalone `Execute` instruction (program id = the hook), let
+    // `add_to_cpi_instruction` resolve the metas against it, then graft the resolved *extra*
+    // accounts (everything past the 5 standard ones) onto the real transfer-checked CPI.
+    //
+    // The first four accounts of the transfer-checked CPI are, in order, source/mint/destination/
+    // authority — the leading accounts of an `Execute`.
+    let mut execute_instruction = instruction::execute(
+        program_id,
+        cpi_account_infos[0].key,
+        cpi_account_infos[1].key,
+        cpi_account_infos[2].key,
+        cpi_account_infos[3].key,
+        &validation_pubkey,
+        amount,
+    );
+    let mut execute_account_infos = vec![
+        cpi_account_infos[0].clone(),
+        cpi_account_infos[1].clone(),
+        cpi_account_infos[2].clone(),
+        cpi_account_infos[3].clone(),
+        validation_info.clone(),
+    ];
+
     ExtraAccountMetaList::add_to_cpi_instruction::<instruction::ExecuteInstruction>(
-        cpi_instruction,
-        cpi_account_infos,
+        &mut execute_instruction,
+        &mut execute_account_infos,
         &validation_info.try_borrow_data()?,
         additional_accounts,
     )?;
-    // The onchain helpers pull out the required accounts from an opaque
-    // slice by pubkey, so the order doesn't matter here!
+
+    // Graft the resolved extra accounts (past source/mint/destination/authority/validation) onto
+    // the transfer-checked CPI, then the validation state and the hook program itself.
+    cpi_instruction
+        .accounts
+        .extend_from_slice(&execute_instruction.accounts[5..]);
+    cpi_account_infos.extend_from_slice(&execute_account_infos[5..]);
+
     cpi_account_infos.push(validation_info.clone());
     cpi_account_infos.push(program_info.clone());
     cpi_instruction

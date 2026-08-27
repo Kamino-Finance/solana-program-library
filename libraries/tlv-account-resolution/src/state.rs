@@ -313,21 +313,24 @@ impl ExtraAccountMetaList {
         let state = TlvStateBorrowed::unpack(data)?;
         let bytes = state.get_first_bytes::<T>()?;
         let extra_account_metas = PodSlice::<ExtraAccountMeta>::unpack(bytes)?;
+        let extra_account_metas = extra_account_metas.data();
 
-        for extra_meta in extra_account_metas.data().iter() {
-            let mut meta = {
-                // Create a list of `Ref`s so we can reference account data in the
-                // resolution step
-                let account_key_data_refs = cpi_account_infos
-                    .iter()
-                    .map(|info| {
-                        let key = *info.key;
-                        let data = info.try_borrow_data()?;
-                        Ok((key, data))
-                    })
-                    .collect::<Result<Vec<_>, ProgramError>>()?;
+        // All allocations here are up-front and exact-sized:
+        cpi_instruction.accounts.reserve(extra_account_metas.len());
+        cpi_account_infos.reserve(extra_account_metas.len());
 
-                extra_meta.resolve(
+        // Appended to `cpi_account_infos` only after the loop, whose data `Ref`s borrow from that vector:
+        let mut resolved_infos = Vec::with_capacity(extra_account_metas.len());
+        {
+            // Account keys + data `Ref`s for the resolution step, extended with each resolved account (borrowing from the outliving `account_infos`):
+            let mut account_key_data_refs =
+                Vec::with_capacity(cpi_account_infos.len() + extra_account_metas.len());
+            for info in cpi_account_infos.iter() {
+                account_key_data_refs.push((*info.key, info.try_borrow_data()?));
+            }
+
+            for extra_meta in extra_account_metas.iter() {
+                let mut meta = extra_meta.resolve(
                     &cpi_instruction.data,
                     &cpi_instruction.program_id,
                     |usize| {
@@ -335,19 +338,20 @@ impl ExtraAccountMetaList {
                             .get(usize)
                             .map(|(pubkey, opt_data)| (pubkey, Some(opt_data.as_ref())))
                     },
-                )?
-            };
-            de_escalate_account_meta(&mut meta, &cpi_instruction.accounts);
+                )?;
+                de_escalate_account_meta(&mut meta, &cpi_instruction.accounts);
 
-            let account_info = account_infos
-                .iter()
-                .find(|&x| *x.key == meta.pubkey)
-                .ok_or(AccountResolutionError::IncorrectAccount)?
-                .clone();
+                let account_info = account_infos
+                    .iter()
+                    .find(|&x| *x.key == meta.pubkey)
+                    .ok_or(AccountResolutionError::IncorrectAccount)?;
 
-            cpi_instruction.accounts.push(meta);
-            cpi_account_infos.push(account_info);
+                account_key_data_refs.push((meta.pubkey, account_info.try_borrow_data()?));
+                cpi_instruction.accounts.push(meta);
+                resolved_infos.push(account_info.clone());
+            }
         }
+        cpi_account_infos.extend(resolved_infos);
         Ok(())
     }
 }

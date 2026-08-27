@@ -109,6 +109,9 @@ pub fn add_cpi_accounts_for_execute<'a>(
 
     // Graft the resolved extra accounts (past source/mint/destination/authority/validation) onto
     // the transfer-checked CPI, then the validation state and the hook program itself.
+    let grafted_accounts = (execute_instruction.accounts.len() - 5) + 2; // exact sizing, for alloc optimization only
+    cpi_instruction.accounts.reserve(grafted_accounts);
+    cpi_account_infos.reserve(grafted_accounts);
     cpi_instruction
         .accounts
         .extend_from_slice(&execute_instruction.accounts[5..]);

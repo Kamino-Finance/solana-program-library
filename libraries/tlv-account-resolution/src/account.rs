@@ -69,7 +69,7 @@ fn resolve_pda<'a, F>(
 where
     F: Fn(usize) -> Option<(&'a Pubkey, Option<&'a [u8]>)>,
 {
-    let mut pda_seeds: Vec<&[u8]> = vec![];
+    let mut pda_seeds: Vec<&[u8]> = Vec::with_capacity(seeds.len());
     for config in seeds {
         match config {
             Seed::Uninitialized => (),

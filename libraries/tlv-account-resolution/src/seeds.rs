@@ -179,7 +179,7 @@ impl Seed {
     /// Unpacks all seed configurations from a 32-byte array.
     /// Stops when it hits uninitialized data (0s).
     pub fn unpack_address_config(address_config: &[u8; 32]) -> Result<Vec<Self>, ProgramError> {
-        let mut seeds = vec![];
+        let mut seeds = Vec::with_capacity(4); // pre-size for happy-path alloc optimization
         let mut i = 0;
         while i < 32 {
             let seed = Self::unpack(&address_config[i..])?;
